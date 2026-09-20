@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caisse - Prise de Commande</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        .table-card {
+            transition: transform 0.2s ease, border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+        }
+        .table-card:hover {
+            transform: translateY(-2px);
+        }
+        .table-card.is-free {
+            border-color: transparent;
+        }
+        .table-card.is-occupied {
+            border-color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-base-200 min-h-screen p-6">
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        {% include 'navbar.html' %}
+
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Plan des Tables</h1>
+            <div class="flex gap-4">
+                <span class="flex items-center gap-2"><div class="badge badge-success badge-xs"></div> Libre</span>
+                <span class="flex items-center gap-2"><div class="badge badge-error badge-xs"></div> Occupée</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+            {% for table in tables %}
+            <div id="card-table-{{ table.number }}" 
+                 class="table-card card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border-2 {% if table.is_occupied %}is-occupied border-error{% else %}is-free border-transparent{% endif %}"
+                 hx-get="/caisse/table/{{ table.number }}"
+                 hx-target="#modal-container"
+                 hx-swap="innerHTML"
+                 hx-trigger="click"
+                 onclick="table_modal.showModal()">
+                
+                <div class="card-body items-center text-center p-6">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mb-2 {% if table.is_occupied %}bg-error/20 text-error{% else %}bg-success/20 text-success{% endif %}">
+                        T-{{ table.number }}
+                    </div>
+                    
+                    <h2 class="card-title text-base">Table {{ table.number }}</h2>
+                </div>
+            </div>
+            {% endfor %}
+            <div id="card-table" 
+                 class="table-card card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border-2 is-free border-transparent">
+                <div class="card-body items-center text-center p-6">
+                    <h2 class="card-title text-base">Ajouter une table</h2>
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mb-2 bg-accent/50 text-success">
+                       +
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <dialog id="table_modal" class="modal modal-bottom sm:modal-middle backdrop-blur-sm">
+        <div class="modal-box max-w-2xl bg-base-100" id="modal-container">
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>Fermer</button>
+        </form>
+    </dialog>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des Ventes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+</head>
+<body class="bg-base-200 min-h-screen p-6">
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        {% include 'navbar.html' %}
+
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Historique des Ventes</h1>
+            <div class="stats shadow bg-base-100">
+                <div class="stat">
+                    <div class="stat-title">Recette Totale</div>
+                    <div class="stat-value text-primary">{{ "{:,.0f}".format(total_recette) }} Ar</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-base-100 rounded-lg shadow overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Date & Heure</th>
+                        <th>Table</th>
+                        <th>Article</th>
+                        <th>Quantité</th>
+                        <th>Prix U.</th>
+                        <th class="text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td>{{ sale.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td><span class="badge badge-neutral">Table {{ sale.table_number }}</span></td>
+                        <td class="font-bold">{{ sale.item_name }}</td>
+                        <td>{{ sale.quantity }}</td>
+                        <td>{{ "{:,.0f}".format(sale.price_at_sale) }} Ar</td>
+                        <td class="text-right font-bold text-success">{{ "{:,.0f}".format(sale.total_price) }} Ar</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-base-content/50 py-6">
+                            Aucune vente enregistrée dans l'historique.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</body>
+</html>

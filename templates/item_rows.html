@@ -1,0 +1,9 @@
+{% for item in items %}
+    {% include 'item_row.html' %}
+{% else %}
+    <tr>
+        <td colspan="6" class="text-center py-4 text-base-content/60">
+            Aucun produit trouvé
+        </td>
+    </tr>
+{% endfor %}

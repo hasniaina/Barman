@@ -1,0 +1,41 @@
+<form method="dialog">
+    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+</form>
+
+<h3 class="font-bold text-lg mb-4">Modifier l'article #{{ item.id }}</h3>
+
+<form hx-put="/items/{{ item.id }}"
+      hx-target="#item-row-{{ item.id }}"
+      hx-swap="outerHTML"
+      hx-on::after-request="if (event.detail.successful) edit_modal.close()"
+      class="space-y-4">
+
+    <div class="form-control">
+        <label class="label"><span class="label-text font-semibold">Nom du produit</span></label>
+        <input type="text" name="name" value="{{ item.name }}" class="input input-bordered w-full" required />
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+        <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">Prix (Ar)</span></label>
+            <input type="text" name="price" inputmode="numeric" value="{{ item.price }}" class="input input-bordered w-full" required />
+        </div>
+
+        <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">Quantité</span></label>
+            <input type="number" name="quantity" value="{{ item.quantity }}" class="input input-bordered w-full" required />
+        </div>
+    </div>
+
+    <div class="form-control">
+        <label class="label cursor-pointer justify-start gap-4">
+            <input type="checkbox" name="snack" value="true" class="checkbox checkbox-accent" {% if item.snack %}checked{% endif %} />
+            <span class="label-text font-semibold">Est un snack ?</span>
+        </label>
+    </div>
+
+    <div class="modal-action">
+        <button type="button" class="btn btn-ghost" onclick="edit_modal.close()">Annuler</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+</form>

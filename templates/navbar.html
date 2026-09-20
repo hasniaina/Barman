@@ -1,0 +1,18 @@
+<div class="navbar bg-base-100 rounded-box shadow-md px-6 mb-6">
+    <div class="flex-1">
+        <a class="text-2xl font-bold text-primary">Cash</a>
+    </div>
+    <div class="flex-none">
+        <ul class="menu menu-horizontal px-1 gap-2">
+            <li>
+                <a href="/" class="{{ 'active' if request.url.path == '/' else '' }}">Inventaire</a>
+            </li>
+            <li>
+                <a href="/caisse" class="{{ 'active' if request.url.path.startswith('/caisse') else '' }}">Caisse / Tables</a>
+            </li>
+            <li>
+                <a href="/historique" class="{{ 'active' if request.url.path.startswith('/historique') else '' }}">Historique</a>
+            </li>
+        </ul>
+    </div>
+</div>

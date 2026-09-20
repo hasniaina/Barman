@@ -1,0 +1,107 @@
+<form method="dialog">
+    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+</form>
+
+<div class="flex justify-between items-center mb-6">
+    <h3 class="font-bold text-xl flex items-center gap-2">
+        <span>Table {{ table_number }}</span>
+        {% if orders %}
+            <span class="badge badge-error">Occupée</span>
+        {% else %}
+            <span class="badge badge-success">Libre</span>
+        {% endif %}
+    </h3>
+</div>
+
+<!-- Formulaire d'ajout d'article -->
+<form hx-post="/caisse/table/{{ table_number }}/add"
+      hx-target="#modal-container"
+      hx-swap="innerHTML"
+      class="flex gap-2 mb-6">
+    
+    <select name="item_id" class="select select-bordered flex-1" required>
+        <option value="" disabled selected>Sélectionner un article...</option>
+        {% for item in items %}
+            <option value="{{ item.id }}">
+                {{ item.name }} - {{ "{:,.0f}".format(item.price) }} Ar  {% if not item.snack %} (Stock: {{item.quantity}} ) {% endif %}
+            </option>
+        {% endfor %}
+    </select>
+    
+    <input type="number" name="quantity" value="1" min="1" class="input input-bordered w-20" required />
+    
+    <button type="submit" class="btn btn-primary">+ Ajouter</button>
+</form>
+
+<div class="overflow-y-auto max-h-56 border border-base-200 rounded-lg mb-6">
+    <table class="table table-zebra w-full">
+        <thead>
+            <tr>
+                <th>Article</th>
+                <th>Qté</th>
+                <th>Prix U.</th>
+                <th class="text-right">Total</th>
+                <th class="text-right">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td class="font-semibold">{{ order.item.name }}</td>
+                <td>
+                    <form hx-post="/caisse/table/{{ table_number }}/order/{{ order.id }}/quantity"
+                          hx-target="#modal-container"
+                          hx-swap="innerHTML"
+                          class="flex items-center gap-2">
+                        <input type="number"
+                               name="quantity"
+                               value="{{ order.quantity }}"
+                               min="1"
+                               class="input input-bordered input-xs w-16 text-center"
+                               required />
+                        <button type="submit" class="btn btn-xs btn-primary">OK</button>
+                    </form>
+                </td>
+                <td>{{ "{:,.0f}".format(order.price_at_sale) }} Ar</td>
+                <td class="text-right font-bold">{{ "{:,.0f}".format(order.quantity * order.price_at_sale) }} Ar</td>
+                <td class="text-right">
+                    <button type="button"
+                            class="btn btn-xs btn-error btn-outline"
+                            hx-delete="/caisse/table/{{ table_number }}/order/{{ order.id }}"
+                            hx-target="#modal-container"
+                            hx-swap="innerHTML"
+                            hx-confirm="Supprimer {{ order.item.name }} de cette table ?">
+                        Supprimer
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center text-base-content/50 py-4">
+                    Aucune commande en cours pour cette table.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="flex justify-between items-center pt-4 border-t border-base-200">
+    <div>
+        <span class="text-sm text-base-content/70">Total à payer</span>
+        <div class="text-2xl font-black text-primary">{{ "{:,.0f}".format(total) }} Ar</div>
+    </div>
+    
+    <div class="flex gap-2">
+        <button type="button" class="btn btn-ghost" onclick="table_modal.close()">Fermer</button>
+        
+        {% if orders %}
+            <button type="button"
+                    class="btn btn-success text-white"
+                    hx-post="/caisse/table/{{ table_number }}/checkout"
+                    hx-on::after-request="table_modal.close()">
+                Facturer & Encaisser
+            </button>
+        {% endif %}
+    </div>
+</div>

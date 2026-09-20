@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Stock - Bar</title>
+    
+    <!-- CDN Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- CDN daisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body class="bg-base-200 min-h-screen p-6">
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <!-- Inclusion de la Navbar -->
+        {% include 'navbar.html' %}
+
+        <!-- Carte principale Inventaire -->
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body">
+                
+                <!-- En-tête : Titre, Filtre de recherche et Bouton d'ajout -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <h2 class="card-title text-xl">Stock actuel</h2>
+                    
+                    <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-3">
+                        <!-- Champ de recherche réactif avec HTMX -->
+                        <div class="relative w-full sm:w-64">
+                            <input type="search" 
+                                   name="q" 
+                                   placeholder="Filtrer par nom..." 
+                                   class="input input-bordered w-full pr-10"
+                                   hx-get="/items/search" 
+                                   hx-trigger="keyup changed delay:200ms, search" 
+                                   hx-target="#stock-list" 
+                                   hx-swap="innerHTML" />
+                            <span class="absolute right-3 top-3 text-base-content/40">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </span>
+                        </div>
+
+                        <!-- Bouton déclencheur de la Modale -->
+                        <button class="btn btn-primary" onclick="add_product_modal.showModal()">
+                            + Ajouter un article
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Tableau avec en-tête fixe et corps scrollable -->
+                <div class="overflow-y-auto max-h-[60vh] border border-base-200 rounded-lg">
+                    <table class="table table-zebra w-full">
+                        <thead class="sticky top-0 bg-base-100 z-10 shadow-sm">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom</th>
+                                <th>Quantité</th>
+                                <th>Prix U.</th>
+                                <th>Ajustement</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-list">
+                            {% for item in items %}
+                                {% include 'item_row.html' %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modale daisyUI pour l'ajout de produit -->
+    <dialog id="add_product_modal" class="modal">
+        <div class="modal-box max-w-lg">
+            <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_product_modal.close()">✕</button>
+            <h3 class="font-bold text-lg mb-4">Ajouter un nouvel article</h3>
+            
+            <form hx-post="/items"
+                  hx-target="#stock-list"
+                  hx-swap="beforeend"
+                  hx-on::after-request="this.reset(); add_product_modal.close()">
+                
+                <div class="space-y-4 mb-6">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Nom</span></label>
+                        <input type="text" name="name" placeholder="Ex: Bière Pinte" class="input input-bordered w-full" required />
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">Stock initial</span></label>
+                            <input type="number" name="quantity" value="0" min="0" class="input input-bordered w-full" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">Prix unitaire (Ar)</span></label>
+                            <input type="text" name="price" inputmode="numeric" placeholder="500" class="input input-bordered w-full" required />
+                        </div>
+                    </div>
+
+                    <div class="form-control pt-2">
+                        <label class="label cursor-pointer justify-start gap-3">
+                            <span class="label-text">Type Snack ?</span>
+                            <input type="checkbox" name="snack" class="checkbox" value="true" />
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="modal-action">
+                    <button type="button" class="btn" onclick="add_product_modal.close()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Clic extérieur pour fermer la modale -->
+        <form method="dialog" class="modal-backdrop">
+            <button type="submit">Fermer</button>
+        </form>
+    </dialog>
+    <dialog id="edit_modal" class="modal modal-bottom sm:modal-middle backdrop-blur-sm">
+        <div class="modal-box bg-base-100" id="edit-modal-container">
+            <!-- Le formulaire de modification sera injecté ici dynamiquement par HTMX -->
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>Fermer</button>
+        </form>
+    </dialog>
+
+    <script>
+        function normalizeMoney(value) {
+            return String(value || '')
+                .replace(/\u202F/g, '')
+                .replace(/\u00A0/g, '')
+                .replace(/\s+/g, '')
+                .replace(/[.,]/g, '');
+        }
+
+        function bindPriceInput(input) {
+            if (!input || input.dataset.moneyBound === 'true') return;
+            input.dataset.moneyBound = 'true';
+            input.setAttribute('inputmode', 'numeric');
+            input.type = 'text';
+
+            input.addEventListener('input', () => {
+                const raw = normalizeMoney(input.value);
+                if (!raw) {
+                    input.value = '';
+                    return;
+                }
+                const numeric = Number(raw);
+                input.value = numeric;
+            });
+
+            const form = input.closest('form');
+            if (form) {
+                form.addEventListener('submit', () => {
+                    input.value = normalizeMoney(input.value);
+                }, { once: true });
+            }
+        }
+
+        function setupPriceFormatting(root = document) {
+            root.querySelectorAll('input[name="price"]').forEach(bindPriceInput);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupPriceFormatting();
+
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) {
+                            setupPriceFormatting(node);
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
+</body>
+</html>

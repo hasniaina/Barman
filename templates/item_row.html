@@ -1,0 +1,37 @@
+<tr id="item-row-{{ item.id }}">
+    <th class="font-normal">{{ item.id }}</th>
+    <td class="font-bold">{{ item.name }}</td>
+    <td>
+    {% if item.snack == False %}
+        <span class="badge badge-lg {{ 'badge-error' if item.quantity == 0 else 'badge-neutral' }}">
+            {{ item.quantity }}
+        </span>
+    {% else %}
+        <span class="badge badge-md badge-accent">
+            snack
+        </span>
+    {% endif %}
+    </td>
+    <td>{{ "{:,.0f}".format(item.price|float) }} Ar</td>
+    <td>
+        <div class="join">
+            <!-- Bouton Modifier : charge le formulaire dans la modale et l'ouvre -->
+            <button class="btn btn-sm btn-outline join-item"
+                    hx-get="/items/{{ item.id }}/edit" 
+                    hx-target="#edit-modal-container" 
+                    hx-swap="innerHTML"
+                    onclick="edit_modal.showModal()">
+                Modifier
+            </button>
+        </div>
+    </td>
+    <td>
+        <button class="btn btn-sm btn-error btn-outline"
+                hx-delete="/items/{{ item.id }}" 
+                hx-target="#item-row-{{ item.id }}" 
+                hx-swap="outerHTML swap:0.2s"
+                hx-confirm="Supprimer {{ item.name }} ?">
+            Supprimer
+        </button>
+    </td>
+</tr>
