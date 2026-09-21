@@ -3,14 +3,21 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, F
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime
 
-DB_FILE = "stock.db"
-DATABASE_URL = f"sqlite:///{DB_FILE}"
+# Récupération de l'URL depuis l'environnement (Render) ou fallback sur SQLite local
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./stock.db")
 
-# Engine SQLite optimise pour les acces concourants légers
-engine = create_engine(
-    DATABASE_URL, 
-    connect_args={"check_same_thread": False}
-)
+# Correction de la compatibilité pour SQLAlchemy (postgres:// -> postgresql://)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Configuration dynamique du moteur selon le type de base
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(
+        DATABASE_URL, 
+        connect_args={"check_same_thread": False}
+    )
+else:
+    engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -26,7 +33,6 @@ class Order(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     item = relationship("Item")
-# 2. Routes Backend dans main.py
 
 class Item(Base):
     __tablename__ = "items"
@@ -49,14 +55,13 @@ class SaleHistory(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 def init_db():
-    """Crée les tables manquantes dans stock.db sans écraser les données existantes."""
+    """Crée les tables manquantes sans écraser les données existantes."""
     Base.metadata.create_all(bind=engine)
 
 def get_db():
-    """Generateur de session BDD pour l'injection de dependance FastAPI."""
+    """Générateur de session BDD pour l'injection de dépendances FastAPI."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
