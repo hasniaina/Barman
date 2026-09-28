@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends, Form, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, Response
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from database import Order, init_db, get_db, Item, SaleHistory, Table

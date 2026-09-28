@@ -55,24 +55,24 @@
                 </div>
             </div>
             {% endfor %}
-            <button type="button"
-                    id="add-table-btn"
-                    class="table-card card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border-2 is-free border-transparent"
-                    hx-post="/caisse/tables/add"
-                    hx-target="#tables-container"
-                    hx-swap="beforeend"
-                    hx-indicator="#add-table-spinner">
-                <div class="card-body items-center text-center p-6">
-                    <h2 class="card-title text-base">Ajouter une table</h2>
-                    <div class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mb-2 bg-accent/50 text-success">
-                       +
-                    </div>
-                    <span id="add-table-spinner" class="loading loading-spinner loading-sm htmx-indicator"></span>
-                </div>
-            </button>
         </div>
 
     </div>
+
+    <!-- Bouton flottant fixe pour ajouter une table -->
+    <button type="button"
+            id="add-table-fab"
+            class="fixed bottom-8 right-8 z-40 btn btn-circle btn-primary btn-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center"
+            hx-post="/caisse/tables/add"
+            hx-target="#tables-container"
+            hx-swap="beforeend"
+            hx-indicator="#fab-spinner"
+            title="Ajouter une table">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 absolute" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span id="fab-spinner" class="loading loading-spinner loading-sm htmx-indicator absolute"></span>
+    </button>
 
     <dialog id="table_modal" class="modal modal-bottom sm:modal-middle backdrop-blur-sm">
         <div class="modal-box max-w-2xl bg-base-100" id="modal-container">
