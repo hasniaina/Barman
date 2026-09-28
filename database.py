@@ -2,6 +2,9 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+
 
 # Récupération de l'URL depuis l'environnement (Render) ou fallback sur SQLite local
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./stock.db")
@@ -22,6 +25,10 @@ else:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+def get_mada_time():
+    # Force l'heure sur le fuseau horaire de Madagascar (UTC+3) sans millisecondes
+    return datetime.now(ZoneInfo("Indian/Antananarivo")).replace(microsecond=0)
+
 class Order(Base):
     __tablename__ = "orders"
 
@@ -30,7 +37,7 @@ class Order(Base):
     item_id = Column(Integer, ForeignKey("items.id"), nullable=False)
     quantity = Column(Integer, default=1)
     price_at_sale = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_mada_time)
 
     item = relationship("Item")
 

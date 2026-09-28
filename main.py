@@ -136,6 +136,27 @@ async def add_to_order(
 
     return HTMLResponse(content=modal_html + table_card_html)
 
+# @app.post("/caisse/table/{table_number}/checkout", response_class=HTMLResponse)
+# async def checkout_table(table_number: int, request: Request, db: Session = Depends(get_db)):
+#     orders = db.query(Order).filter(Order.table_number == table_number).all()
+    
+#     # Transfert des commandes vers l'historique des ventes
+#     for order in orders:
+#         history_entry = SaleHistory(
+#             table_number=order.table_number,
+#             item_name=order.item.name if order.item else "Article supprimé",
+#             quantity=order.quantity,
+#             price_at_sale=order.price_at_sale,
+#             total_price=order.quantity * order.price_at_sale,
+#             created_at=order.created_at
+#         )
+#         db.add(history_entry)
+#         db.delete(order)
+    
+#     db.commit()
+
+#     return HTMLResponse(content=render_table_card(table_number, is_occupied=False))
+
 @app.post("/caisse/table/{table_number}/checkout", response_class=HTMLResponse)
 async def checkout_table(table_number: int, request: Request, db: Session = Depends(get_db)):
     orders = db.query(Order).filter(Order.table_number == table_number).all()
@@ -155,7 +176,14 @@ async def checkout_table(table_number: int, request: Request, db: Session = Depe
     
     db.commit()
 
-    return HTMLResponse(content=render_table_card(table_number, is_occupied=False))
+    # Renvoyer la carte rafraîchie avec swap_oob=True pour mettre à jour la grille de caisse
+    # et fermer automatiquement la modale de paiement
+    card_html = render_table_card(table_number, is_occupied=False, swap_oob=True)
+    
+    # Message de confirmation injecté dans la modale ou script de fermeture
+    modal_close_script = "<script>table_modal.close();</script>"
+    
+    return HTMLResponse(content=card_html + modal_close_script)
 
 
 @app.get("/historique", response_class=HTMLResponse)
