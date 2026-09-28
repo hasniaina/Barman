@@ -5,7 +5,7 @@
     <div class="flex-none">
         <ul class="menu menu-horizontal px-1 gap-2">
             <li>
-                <a href="/" class="{{ 'active' if request.url.path == '/' else '' }}">Inventaire</a>
+                <a href="/bar" class="{{ 'active' if request.url.path == '/bar' else '' }}">Inventaire</a>
             </li>
             <li>
                 <a href="/caisse" class="{{ 'active' if request.url.path.startswith('/caisse') else '' }}">Caisse / Tables</a>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chargement - BARAXE</title>
+    
+    <!-- CDN Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- CDN daisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body class="bg-base-200 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full">
+        <!-- Carte principale cohérente avec index.html -->
+        <div class="card bg-base-100 shadow-md border border-base-200">
+            <div class="card-body text-center items-center p-8 space-y-4">
+                
+                <!-- Logo & Branding -->
+                <div>
+                    <h1 class="text-4xl font-bold tracking-tight text-primary mb-1">BARAXE</h1>
+                    <p class="text-sm font-medium text-base-content/60">Gestion de Stock - Bar</p>
+                </div>
+
+                <!-- Element de chargement daisyUI -->
+                <div class="py-4">
+                    <span class="loading loading-spinner loading-lg text-primary"></span>
+                </div>
+
+                <!-- Status & Message -->
+                <div class="space-y-1">
+                    <h2 class="text-lg font-semibold text-base-content">Initialisation du serveur</h2>
+                    <p class="text-xs text-base-content/70">Connexion en cours, veuillez patienter quelques instants...</p>
+                </div>
+
+                <!-- Barre de progression daisyUI -->
+                <progress class="progress progress-primary w-full h-2 mt-2"></progress>
+
+                <!-- Information de secours -->
+                <div class="pt-4 border-t border-base-200 w-full mt-4">
+                    <p class="text-xs text-base-content/50">
+                        Si la page ne se redirige pas automatiquement, 
+                        <a href="{{ redirect_url|default('/bar') }}" class="link link-primary font-medium">cliquez ici</a>.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Récupération dynamique de l'URL cible fournie par FastAPI ou fallback sur /bar
+        const targetUrl = "{{ redirect_url|default('/bar') }}";
+
+        async function checkServer() {
+            try {
+                const response = await fetch('/health', { method: 'GET' });
+                if (response.ok) {
+                    window.location.href = targetUrl;
+                } else {
+                    setTimeout(checkServer, 1500);
+                }
+            } catch (error) {
+                setTimeout(checkServer, 1500);
+            }
+        }
+
+        // Première tentative
+        checkServer();
+
+        // Sécurité en cas de retard de réponse
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 10000);
+    </script>
+</body>
+</html>

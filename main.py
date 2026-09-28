@@ -18,7 +18,7 @@ templates = Jinja2Templates(directory="templates")
 
 # --- Routes d'affichage ---
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/bar", response_class=HTMLResponse)
 async def read_dashboard(request: Request, db: Session = Depends(get_db)):
     items = db.query(Item).all()
     return templates.TemplateResponse(
@@ -463,3 +463,25 @@ def normalize_price(value: str | float | int) -> float:
         return float(text)
     except ValueError:
         return 0.0
+
+
+# --- ROUTE DE SANTÉ POUR LE SONDAGE ---
+
+@app.get("/health")
+async def health_check():
+    """Route légère consultée par la page de chargement pour vérifier si le serveur est prêt."""
+    return {"status": "ok"}
+
+# --- PAGE DE CHARGEMENT ---
+
+@app.get("/", response_class=HTMLResponse)
+async def loading_page(request: Request, redirect: str = "/bar"):
+    """
+    Affiche un écran de chargement.
+    Le paramètre 'redirect' indique la destination souhaitée une fois le serveur opérationnel.
+    """
+    return templates.TemplateResponse(
+        request=request,
+        name="loading.html",
+        context={"redirect_url": redirect}
+    )
