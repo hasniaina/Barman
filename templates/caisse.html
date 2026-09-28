@@ -23,7 +23,7 @@
         }
     </style>
 </head>
-<body class="bg-base-200 min-h-screen p-6">
+<body class="bg-base-200 min-h-screen p-6 pt-24">
     <div class="max-w-6xl mx-auto space-y-6">
         
         {% include 'navbar.html' %}
@@ -36,7 +36,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+        <div id="tables-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
             {% for table in tables %}
             <div id="card-table-{{ table.number }}" 
                  class="table-card card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border-2 {% if table.is_occupied %}is-occupied border-error{% else %}is-free border-transparent{% endif %}"
@@ -55,15 +55,21 @@
                 </div>
             </div>
             {% endfor %}
-            <div id="card-table" 
-                 class="table-card card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border-2 is-free border-transparent">
+            <button type="button"
+                    id="add-table-btn"
+                    class="table-card card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border-2 is-free border-transparent"
+                    hx-post="/caisse/tables/add"
+                    hx-target="#tables-container"
+                    hx-swap="beforeend"
+                    hx-indicator="#add-table-spinner">
                 <div class="card-body items-center text-center p-6">
                     <h2 class="card-title text-base">Ajouter une table</h2>
                     <div class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mb-2 bg-accent/50 text-success">
                        +
                     </div>
+                    <span id="add-table-spinner" class="loading loading-spinner loading-sm htmx-indicator"></span>
                 </div>
-            </div>
+            </button>
         </div>
 
     </div>

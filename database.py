@@ -54,6 +54,14 @@ class SaleHistory(Base):
     total_price = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class Table(Base):
+    __tablename__ = "tables"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    number = Column(Integer, unique=True, nullable=False)
+    is_occupied = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 def init_db():
     """Crée les tables manquantes sans écraser les données existantes."""
     Base.metadata.create_all(bind=engine)

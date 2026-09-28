@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 
-from database import Order, init_db, get_db, Item, SaleHistory
+from database import Order, init_db, get_db, Item, SaleHistory, Table
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,15 +34,28 @@ async def read_dashboard(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/caisse", response_class=HTMLResponse)
 async def caisse_view(request: Request, db: Session = Depends(get_db)):
+    # Récupération des tables de la base de données, triées par numéro
+    tables_db = db.query(Table).order_by(Table.number).all()
+    
+    # Si aucune table n'existe, créer les 12 tables de démonstration
+    if not tables_db:
+        for i in range(1, 13):
+            new_table = Table(number=i, is_occupied=False)
+            db.add(new_table)
+        db.commit()
+        tables_db = db.query(Table).order_by(Table.number).all()
+    
     # Récupération des tables ayant au moins une commande active
     active_tables_query = db.query(Order.table_number).distinct().all()
     active_tables = {row[0] for row in active_tables_query}
     
-    # Génération de 12 tables de démonstration
-    tables = [
-        {"number": i, "is_occupied": i in active_tables}
-        for i in range(1, 13)
-    ]
+    # Mise à jour du statut is_occupied
+    tables = []
+    for table in tables_db:
+        is_occupied = table.number in active_tables
+        table.is_occupied = is_occupied
+        tables.append({"number": table.number, "is_occupied": is_occupied})
+    db.commit()
     
     return templates.TemplateResponse(
         request=request,
@@ -146,15 +159,71 @@ async def checkout_table(table_number: int, request: Request, db: Session = Depe
 
 @app.get("/historique", response_class=HTMLResponse)
 async def get_history(request: Request, db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    from collections import defaultdict
+    from datetime import datetime
+    
     sales = db.query(SaleHistory).order_by(SaleHistory.created_at.desc()).all()
     total_recette = sum(sale.total_price for sale in sales)
+    
+    # Calcul des statistiques par mois
+    monthly_stats = defaultdict(lambda: {"recette": 0, "count": 0})
+    for sale in sales:
+        month_key = sale.created_at.strftime("%Y-%m")
+        monthly_stats[month_key]["recette"] += sale.total_price
+        monthly_stats[month_key]["count"] += 1
+    
+    # Tri des mois en ordre décroissant
+    monthly_data = sorted(
+        [{"month": k, "recette": v["recette"], "count": v["count"]} 
+         for k, v in monthly_stats.items()],
+        reverse=True
+    )
+    
+    # KPIs généraux
+    total_sales_count = len(sales)
+    avg_transaction = total_recette / total_sales_count if total_sales_count > 0 else 0
+    unique_tables = len(set(sale.table_number for sale in sales))
+    
+    # Articles les plus vendus (top 5, pas top 1)
+    item_stats = defaultdict(lambda: {"quantity": 0, "total": 0})
+    for sale in sales:
+        item_stats[sale.item_name]["quantity"] += sale.quantity
+        item_stats[sale.item_name]["total"] += sale.total_price
+    
+    top_items = sorted(
+        [{"name": k, "quantity": v["quantity"], "total": v["total"]} 
+         for k, v in item_stats.items()],
+        key=lambda x: x["quantity"],
+        reverse=True
+    )[:5]
+    
+    # Statistiques par jour de la semaine
+    weekday_stats = defaultdict(lambda: {"recette": 0, "count": 0})
+    weekday_names = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+    for sale in sales:
+        weekday = sale.created_at.weekday()
+        weekday_key = weekday_names[weekday]
+        weekday_stats[weekday_key]["recette"] += sale.total_price
+        weekday_stats[weekday_key]["count"] += 1
+    
+    weekday_data = [
+        {"day": name, "recette": weekday_stats[name]["recette"], "count": weekday_stats[name]["count"]} 
+        for name in weekday_names if weekday_stats[name]["count"] > 0
+    ]
     
     return templates.TemplateResponse(
         request=request,
         name="historique.html",
         context={
             "sales": sales,
-            "total_recette": total_recette
+            "total_recette": total_recette,
+            "total_sales_count": total_sales_count,
+            "avg_transaction": avg_transaction,
+            "unique_tables": unique_tables,
+            "monthly_data": monthly_data,
+            "top_items": top_items,
+            "weekday_data": weekday_data
         }
     )
 
@@ -167,6 +236,22 @@ async def get_table_card(table_number: int, request: Request, db: Session = Depe
 
 def get_card_html(table_number: int, is_occupied: bool) -> str:
     return render_table_card(table_number, is_occupied)
+
+
+@app.post("/caisse/tables/add", response_class=HTMLResponse)
+async def add_table(request: Request, db: Session = Depends(get_db)):
+    # Récupérer le numéro de la dernière table
+    last_table = db.query(Table).order_by(Table.number.desc()).first()
+    new_table_number = (last_table.number + 1) if last_table else 1
+    
+    # Créer la nouvelle table
+    new_table = Table(number=new_table_number, is_occupied=False)
+    db.add(new_table)
+    db.commit()
+    db.refresh(new_table)
+    
+    # Retourner le HTML de la nouvelle carte de table
+    return HTMLResponse(content=render_table_card(new_table.number, False))
 
 
 @app.post("/items", response_class=HTMLResponse)

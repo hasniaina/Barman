@@ -7,52 +7,158 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
 </head>
-<body class="bg-base-200 min-h-screen p-6">
-    <div class="max-w-6xl mx-auto space-y-6">
+<body class="bg-base-200 min-h-screen p-6 pt-24">
+    <div class="max-w-7xl mx-auto space-y-6">
         
         {% include 'navbar.html' %}
 
+        <!-- Titre principal -->
         <div class="flex justify-between items-center">
-            <h1 class="text-2xl font-bold">Historique des Ventes</h1>
-            <div class="stats shadow bg-base-100">
-                <div class="stat">
-                    <div class="stat-title">Recette Totale</div>
-                    <div class="stat-value text-primary">{{ "{:,.0f}".format(total_recette) }} Ar</div>
-                </div>
+            <h1 class="text-3xl font-bold">Historique des Ventes</h1>
+        </div>
+
+        <!-- KPIs principaux -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="stat bg-base-100 rounded-lg shadow">
+                <div class="stat-title text-sm">Recette Totale</div>
+                <div class="stat-value text-primary text-2xl">{{ "{:,.0f}".format(total_recette) }}</div>
+                <div class="stat-desc">Ar</div>
+            </div>
+            
+            <div class="stat bg-base-100 rounded-lg shadow">
+                <div class="stat-title text-sm">Nombre de Transactions</div>
+                <div class="stat-value text-secondary text-2xl">{{ total_sales_count }}</div>
+                <div class="stat-desc">ventes enregistrées</div>
+            </div>
+            
+            <div class="stat bg-base-100 rounded-lg shadow">
+                <div class="stat-title text-sm">Panier Moyen</div>
+                <div class="stat-value text-success text-2xl">{{ "{:,.0f}".format(avg_transaction) }}</div>
+                <div class="stat-desc">Ar par transaction</div>
+            </div>
+            
+            <div class="stat bg-base-100 rounded-lg shadow">
+                <div class="stat-title text-sm">Tables Utilisées</div>
+                <div class="stat-value text-warning text-2xl">{{ unique_tables }}</div>
+                <div class="stat-desc">tables différentes</div>
             </div>
         </div>
 
-        <div class="bg-base-100 rounded-lg shadow overflow-x-auto">
-            <table class="table table-zebra w-full">
-                <thead>
-                    <tr>
-                        <th>Date & Heure</th>
-                        <th>Table</th>
-                        <th>Article</th>
-                        <th>Quantité</th>
-                        <th>Prix U.</th>
-                        <th class="text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for sale in sales %}
-                    <tr>
-                        <td>{{ sale.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td><span class="badge badge-neutral">Table {{ sale.table_number }}</span></td>
-                        <td class="font-bold">{{ sale.item_name }}</td>
-                        <td>{{ sale.quantity }}</td>
-                        <td>{{ "{:,.0f}".format(sale.price_at_sale) }} Ar</td>
-                        <td class="text-right font-bold text-success">{{ "{:,.0f}".format(sale.total_price) }} Ar</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center text-base-content/50 py-6">
-                            Aucune vente enregistrée dans l'historique.
-                        </td>
-                    </tr>
+        <!-- Statistiques par mois -->
+        {% if monthly_data %}
+        <div class="bg-base-100 rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Recettes par Mois</h2>
+            <div class="overflow-x-auto">
+                <table class="table table-sm w-full">
+                    <thead>
+                        <tr class="border-b-2 border-base-300">
+                            <th class="text-left">Mois</th>
+                            <th class="text-right">Nombre de Ventes</th>
+                            <th class="text-right">Recette Total</th>
+                            <th class="text-right">Panier Moyen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for month in monthly_data %}
+                        <tr class="border-b border-base-200 hover:bg-base-200/50">
+                            <td class="font-semibold">{{ month.month }}</td>
+                            <td class="text-right">{{ month.count }}</td>
+                            <td class="text-right font-bold text-success">{{ "{:,.0f}".format(month.recette) }} Ar</td>
+                            <td class="text-right">{{ "{:,.0f}".format(month.recette / month.count) }} Ar</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Grille de statistiques supplémentaires -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Articles les plus vendus -->
+            {% if top_items %}
+            <div class="bg-base-100 rounded-lg shadow p-6">
+                <h2 class="text-xl font-bold mb-4">Top 5 Articles Vendus</h2>
+                <div class="space-y-3">
+                    {% for item in top_items %}
+                    <div class="flex items-center justify-between p-3 bg-base-200/50 rounded-lg">
+                        <div class="flex-1">
+                            <p class="font-semibold">{{ item.name }}</p>
+                            <p class="text-sm text-base-content/60">{{ item.quantity }} unité{{ 's' if item.quantity > 1 else '' }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-success">{{ "{:,.0f}".format(item.total) }} Ar</p>
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Statistiques par jour de la semaine -->
+            {% if weekday_data %}
+            <div class="bg-base-100 rounded-lg shadow p-6">
+                <h2 class="text-xl font-bold mb-4">Recettes par Jour de la Semaine</h2>
+                <div class="space-y-3">
+                    {% for day in weekday_data %}
+                    <div class="flex items-center gap-4">
+                        <div class="w-24 font-semibold text-sm">{{ day.day }}</div>
+                        <div class="flex-1">
+                            <div class="bg-base-300 rounded-full h-6 flex items-center" 
+                                 style="width: 100%">
+                                <div class="h-6 bg-primary rounded-full transition-all"
+                                     style="width: {{ (day.recette / (monthly_data[0].recette if monthly_data else 1)) * 100 if monthly_data else 0 }}%"></div>
+                            </div>
+                        </div>
+                        <div class="text-right w-32">
+                            <p class="font-bold text-success">{{ "{:,.0f}".format(day.recette) }} Ar</p>
+                            <p class="text-xs text-base-content/60">{{ day.count }} vente{{ 's' if day.count > 1 else '' }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tableau détaillé des ventes -->
+        <div class="bg-base-100 rounded-lg shadow overflow-hidden">
+            <div class="p-6 border-b border-base-200">
+                <h2 class="text-xl font-bold">Détail des Ventes</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>Date & Heure</th>
+                            <th>Table</th>
+                            <th>Article</th>
+                            <th>Quantité</th>
+                            <th>Prix U.</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales %}
+                        <tr>
+                            <td>{{ sale.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td><span class="badge badge-neutral">Table {{ sale.table_number }}</span></td>
+                            <td class="font-bold">{{ sale.item_name }}</td>
+                            <td>{{ sale.quantity }}</td>
+                            <td>{{ "{:,.0f}".format(sale.price_at_sale) }} Ar</td>
+                            <td class="text-right font-bold text-success">{{ "{:,.0f}".format(sale.total_price) }} Ar</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-base-content/50 py-6">
+                                Aucune vente enregistrée dans l'historique.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
     </div>
